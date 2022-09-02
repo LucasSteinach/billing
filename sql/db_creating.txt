@@ -1,0 +1,72 @@
+CREATE DATABASE "ECOM_billing"
+    WITH
+    OWNER = postgres
+    ENCODING = 'UTF8'
+    LC_COLLATE = 'Russian_Russia.1251'
+    LC_CTYPE = 'Russian_Russia.1251'
+    TABLESPACE = pg_default
+    CONNECTION LIMIT = -1;
+
+
+CREATE TABLE IF NOT EXISTS balance
+(
+    id_client integer NOT NULL,
+    current_balance numeric(12,2) NOT NULL,
+    last_changing timestamp without time zone NOT NULL,
+    status character varying(20),
+    CONSTRAINT clients_key FOREIGN KEY (id_client)
+        REFERENCES public.clients (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+);
+
+
+CREATE TABLE IF NOT EXISTS clients
+(
+    id integer NOT NULL,
+    CONSTRAINT clients_pkey PRIMARY KEY (id)
+);
+
+
+CREATE TABLE IF NOT EXISTS relation_client_service
+(
+    id integer NOT NULL,
+    id_client integer NOT NULL,
+    id_service integer NOT NULL,
+    status character varying(40) NOT NULL,
+    CONSTRAINT relation_client_service_pkey PRIMARY KEY (id),
+    CONSTRAINT clients_key FOREIGN KEY (id_client)
+        REFERENCES clients (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+        NOT VALID,
+    CONSTRAINT services_key FOREIGN KEY (id_service)
+        REFERENCES services (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+        NOT VALID
+);
+
+
+CREATE TABLE IF NOT EXISTS services
+(
+    id integer NOT NULL DEFAULT nextval('services_id_seq'::regclass),
+    description character varying COLLATE pg_catalog."default" NOT NULL,
+    type character varying(20) COLLATE pg_catalog."default" NOT NULL,
+    status character varying(20) COLLATE pg_catalog."default" NOT NULL,
+    price integer NOT NULL,
+    CONSTRAINT services_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS tarificator
+(
+    id integer NOT NULL DEFAULT nextval('tarificator_id_seq'::regclass),
+    id_relation integer NOT NULL,
+    action_type character varying COLLATE pg_catalog."default" NOT NULL,
+    parameter integer,
+    date timestamp without time zone NOT NULL,
+    CONSTRAINT relation_constr FOREIGN KEY (id_relation)
+        REFERENCES relation_client_service (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+);

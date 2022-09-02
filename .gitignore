@@ -1,0 +1,5 @@
+img/
+venv/
+.idea/
+.env
+models/test.py
