@@ -1,22 +1,20 @@
-from datetime import datetime
-
 
 class Transaction:
-    def __init__(self, id_, id_client, id_service, action_type, parameter, date_time):
-        self.id = id_
+    def __init__(self, id_relation, id_client, action_type, parameter, date_time, count):
+        self.id_relation = id_relation
         self.id_client = id_client
-        self.id_service = id_service
-        self.action_type = action_type  # "Write-off", "Add"
+        self.action_type = action_type  # "regular", "one-off"
         self.parameter = parameter
         self.datetime = date_time
+        self.count = count
 
 
 class Balance:
-    def __init__(self, id_client, init_balance):
+    def __init__(self, id_client, init_balance, date_time, status):
         self.id_client = id_client
         self.current_value = init_balance
-        self.last_changing = datetime.now()
-        self.status = 'Active'
+        self.last_changing = date_time
+        self.status = status
 
     def activate(self):
         self.status = 'Active'
@@ -24,10 +22,8 @@ class Balance:
     def deactivate(self):
         self.status = 'Inactive'
 
-    def calculate(self, transaction: Transaction):
+    def calculate(self, withdrawn):
         if self.status == "Inactive":
             return f'Transaction error!  User {self.id_client} balance is inactive'
         else:
-            pass
-
-
+            self.current_value -= summ

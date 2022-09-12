@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS tarificator
     action_type character varying COLLATE pg_catalog."default" NOT NULL,
     parameter integer,
     date timestamp without time zone NOT NULL,
+    withdrawn character varying COLLATE pg_catalog."default" NOT NULL,
     CONSTRAINT relation_constr FOREIGN KEY (id_relation)
         REFERENCES relation_client_service (id) MATCH SIMPLE
         ON UPDATE NO ACTION

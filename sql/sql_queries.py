@@ -1,4 +1,5 @@
 import psycopg2
+from models.models import Balance, Transaction
 
 
 def sql_connection(db_name: str,
@@ -25,7 +26,7 @@ def sql_connection(db_name: str,
     return connection
 
 
-def select_balances(connection):
+def select_balances(connection) -> dict:
     balances_query = f"""
         SELECT id_client, current_balance, last_changing, status FROM balance
     """
@@ -34,25 +35,41 @@ def select_balances(connection):
     balances = pointer.fetchall()
     res = dict()
     for unit in balances:
-        res[unit[0]] = unit
+        res[unit[0]] = Balance(*unit)
     return res
 
 
-def select_transactions(connection):
-    transactions_query = f"""
-        SELECT t.id, c.id, s.id, t.action_type, t.parameter, t.date
-        FROM tarificator as t
-        LEFT JOIN relation_client_service as r
-        ON t.id_relation = r.id
-        LEFT JOIN clients as c
-        ON r.id_client = c.id
-        LEFT JOIN services as s
+def select_services(connection) -> dict:
+    services_query = f"""
+        SELECT r.id, s.price 
+        FROM relation_client_service r
+        LEFT JOIN services s
         ON r.id_service = s.id
+        WHERE s.status = 'Active' AND r.status = 'Active'
+    """
+    pointer = connection.cursor()
+    pointer.execute(services_query)
+    services = pointer.fetchall()
+    res = dict()
+    for service in services:
+        res[service[0]] = service[1]
+    return res
+
+
+def select_transactions(connection) -> dict:
+    transactions_query = f"""
+        SELECT t.id_relation, r.id_client t.action_type, t.parameter, t.date, COUNT(t.id_relation)
+        FROM tarificator as t
+        LEFT JOIN relation_client_service r
+        GROUP BY t.id_relation
     """
     pointer = connection.cursor()
     pointer.execute(transactions_query)
     transactions = pointer.fetchall()
-    return transactions
+    res = dict()
+    for transaction in transactions:
+        res[transaction[0]] = Transaction(*transaction)
+    return res
 
 
 def insert_data(connection, table_name, colum_data, values_data):
