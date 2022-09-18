@@ -41,27 +41,31 @@ def select_balances(connection) -> dict:
 
 def select_services(connection) -> dict:
     services_query = f"""
-        SELECT r.id, s.price 
-        FROM relation_client_service r
-        LEFT JOIN services s
-        ON r.id_service = s.id
-        WHERE s.status = 'Active' AND r.status = 'Active'
+        SELECT r.id_relation, r.id_client, r.id_service, s.description, s.type, s.price 
+        FROM relation_client_service_table r
+        LEFT JOIN services_table s
+        ON r.id_service = s.id_service
+        WHERE s.status = 'active' AND r.status = 'active'
     """
     pointer = connection.cursor()
     pointer.execute(services_query)
     services = pointer.fetchall()
     res = dict()
     for service in services:
-        res[service[0]] = service[1]
+        res[service[0]] = {'id_client': service[1],
+                           'id_service': service[2],
+                           'description': service[3],
+                           'type': service[4],
+                           'price': service[5],
+                           }
     return res
 
 
 def select_transactions(connection) -> dict:
     transactions_query = f"""
-        SELECT t.id_relation, r.id_client t.action_type, t.parameter, t.date, COUNT(t.id_relation)
+        SELECT t.id_relation, r.id_client, t.action_type, t.parameter, t.date
         FROM tarificator as t
         LEFT JOIN relation_client_service r
-        GROUP BY t.id_relation
     """
     pointer = connection.cursor()
     pointer.execute(transactions_query)
@@ -72,9 +76,12 @@ def select_transactions(connection) -> dict:
     return res
 
 
-def insert_data(connection, table_name, colum_data, values_data):
-    if values_data != '':
-        insert_query = f"insert into {table_name} ({colum_data}) values ({values_data})"
+def insert_data(connection, table_name, values_data, col_data):
+    if values_data != '' and type(col_data) == str:
+        colum_data = ''
+        if col_data != '':
+            colum_data = f'({col_data})'
+        insert_query = f"insert into {table_name} {colum_data} values ({values_data})"
         point = connection.cursor()
         point.execute(insert_query)
         connection.commit()
