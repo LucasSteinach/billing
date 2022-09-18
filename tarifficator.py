@@ -3,7 +3,6 @@ from datetime import datetime
 
 from dotenv import load_dotenv, find_dotenv
 from sql.sql_queries import sql_connection, select_transactions, select_from_table, select_services, insert_data
-from models.models import Transaction
 import sched
 import time
 
@@ -30,7 +29,9 @@ def tariffication(res):
                             "'not billed'"
                             ])
         insert_data(conn, 'tarifficator_table', values, '')
+
         res[id_relation] = 'succesfully inserted'
+
     return res
 
 
@@ -46,5 +47,5 @@ if __name__ == '__main__':
     conn = sql_connection(*sql_my_auth_data)
 
     tariffication_results = dict()
-    
+
     print(main_execute(tariffication_results))

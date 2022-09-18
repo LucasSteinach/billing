@@ -28,14 +28,20 @@ def sql_connection(db_name: str,
 
 def select_balances(connection) -> dict:
     balances_query = f"""
-        SELECT id_client, current_balance, last_changing, status FROM balance
+        SELECT id_client, balance, date_change, status FROM clients_table
+        WHERE status = 'active'
     """
     pointer = connection.cursor()
     pointer.execute(balances_query)
     balances = pointer.fetchall()
     res = dict()
     for unit in balances:
-        res[unit[0]] = Balance(*unit)
+        # unit[0] == id_client
+        res[unit[0]] = {
+                        'balance': float(unit[1]),
+                        'date_change': str(unit[2]),
+                        'status': unit[3],
+                        }
     return res
 
 
@@ -52,43 +58,69 @@ def select_services(connection) -> dict:
     services = pointer.fetchall()
     res = dict()
     for service in services:
+        # service[0] == id_relation
         res[service[0]] = {'id_client': service[1],
                            'id_service': service[2],
                            'description': service[3],
                            'type': service[4],
-                           'price': service[5],
+                           'price': float(service[5]),
                            }
     return res
 
 
-def select_transactions(connection) -> dict:
-    transactions_query = f"""
-        SELECT t.id_relation, r.id_client, t.action_type, t.parameter, t.date
-        FROM tarificator as t
-        LEFT JOIN relation_client_service r
-    """
-    pointer = connection.cursor()
-    pointer.execute(transactions_query)
-    transactions = pointer.fetchall()
-    res = dict()
-    for transaction in transactions:
-        res[transaction[0]] = Transaction(*transaction)
-    return res
+def select_transactions(connection, status: str, filter: dict) -> dict:
+    # fields in tarifficator_table:
+    table_fields = {'id_transaction', 'id_relation', 'type', 'parameter', 'date', 'status'}
+    if type(status) == str and status != '' :
+        if type(filter) == dict and set(filter.keys()).issubset(table_fields):
+            conditions = ' AND '.join([f'{key} = {value}' for key, value in filter.items()])
+            transactions_query = f"""
+                SELECT id_transaction, id_relation, type, parameter, date_transaction
+                FROM tarifficator_table
+                WHERE status = '{status}' AND {conditions} 
+            """
+            pointer = connection.cursor()
+            pointer.execute(transactions_query)
+            transactions = pointer.fetchall()
+            res = dict()
+            for transaction in transactions:
+                # transaction[0] == id_transaction
+                res[transaction[0]] = {'id_relation': transaction[1],
+                                       'type': transaction[2],
+                                       'parameter': transaction[3],
+                                       'date_transaction': str(transaction[4]),
+                                      }
+            return res
 
 
 def insert_data(connection, table_name, values_data, col_data):
-    if values_data != '' and type(col_data) == str:
-        colum_data = ''
-        if col_data != '':
-            colum_data = f'({col_data})'
-        insert_query = f"insert into {table_name} {colum_data} values ({values_data})"
-        point = connection.cursor()
-        point.execute(insert_query)
-        connection.commit()
-
-
-def alter_data(connection, table_name, values_data, colum_data='', ):
     pass
+    # if values_data != '' and type(col_data) == str:
+    #     colum_data = ''
+    #     if col_data != '':
+    #         colum_data = f'({col_data})'
+    #     insert_query = f"insert into {table_name} {colum_data} values ({values_data})"
+    #     point = connection.cursor()
+    #     point.execute(insert_query)
+    #     connection.commit()
+
+
+def update_data(connection, table_name, condition_dict: dict, values_dict: dict):
+    values = ', '.join(
+        [
+            f'{key} = {value}' for key, value in values_dict.items()
+        ]
+    )
+    condition = ', '.join(
+        [
+            f'{key} = {value}' for key, value in condition_dict.items()
+        ]
+    )
+    update_query = f"""UPDATE {table_name}
+    SET {values},
+    WHERE {condition};
+    """
+    return update_query
 
 
 def select_from_table(connection, table_name) -> list:
