@@ -28,7 +28,7 @@ def tariffication(res):
                             f"date '{str(datetime.now().date())}'",
                             "'not billed'"
                             ])
-        insert_data(conn, 'tarifficator_table', values, '')
+        insert_data(conn, 'tarifficator_table', '', values)
 
         res[id_relation] = 'succesfully inserted'
 

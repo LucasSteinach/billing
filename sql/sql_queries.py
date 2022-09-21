@@ -71,7 +71,7 @@ def select_services(connection) -> dict:
 def select_transactions(connection, status: str, filter: dict) -> dict:
     # fields in tarifficator_table:
     table_fields = {'id_transaction', 'id_relation', 'type', 'parameter', 'date', 'status'}
-    if type(status) == str and status != '' :
+    if type(status) == str and status != '':
         if type(filter) == dict and set(filter.keys()).issubset(table_fields):
             conditions = ' AND '.join([f'{key} = {value}' for key, value in filter.items()])
             transactions_query = f"""
@@ -93,35 +93,55 @@ def select_transactions(connection, status: str, filter: dict) -> dict:
             return res
 
 
-def insert_data(connection, table_name, values_data, col_data):
-    pass
-    # if values_data != '' and type(col_data) == str:
-    #     colum_data = ''
-    #     if col_data != '':
-    #         colum_data = f'({col_data})'
-    #     insert_query = f"insert into {table_name} {colum_data} values ({values_data})"
-    #     point = connection.cursor()
-    #     point.execute(insert_query)
-    #     connection.commit()
+def insert_data(connection, table_name, col_data, values_data: str):
+
+    if values_data != '' and type(col_data) == str:
+        colum_data = ''
+        if col_data != '':
+            colum_data = f'({col_data})'
+        insert_query = f"insert into {table_name} {colum_data} values ({values_data})"
+        point = connection.cursor()
+        point.execute(insert_query)
+        connection.commit()
+    return f'{len(values_data)} record(s) inserted into {table_name}'
 
 
 def update_data(connection, table_name, condition_dict: dict, values_dict: dict):
     values = ', '.join(
         [
-            f'{key} = {value}' for key, value in values_dict.items()
+            f'{key} = {value}' if type(value) != str else f"{key} = '{value}'" for key, value in values_dict.items()
         ]
     )
-    condition = ', '.join(
+    condition = ' AND '.join(
         [
-            f'{key} = {value}' for key, value in condition_dict.items()
+            f'{key} = {value}' if type(value) != str else f"{key} = '{value}'" for key, value in condition_dict.items()
         ]
     )
     update_query = f"""UPDATE {table_name}
-    SET {values},
+    SET {values}
     WHERE {condition};
     """
-    return update_query
+    pointer = connection.cursor()
+    pointer.execute(update_query)
+    connection.commit()
+    return f'{table_name} updated'
 
+
+def delete_data(connection, table_name, condition_dict: dict):
+    if type(condition_dict) == dict:
+        condition_length = sum([len(value) for value in condition_dict.values()])
+        if condition_length != 0:
+            conditions = ' AND '.join(
+                [
+                    f'{key} = {value}' if type(value) != str else
+                    f"{key} = '{value}'" for key, value in condition_dict.items()
+                ]
+            )
+            insert_query = f"delete from {table_name} where {conditions}"
+            point = connection.cursor()
+            point.execute(insert_query)
+            connection.commit()
+    return f'record(s) deleted from {table_name}'
 
 def select_from_table(connection, table_name) -> list:
     select_query = f"""
