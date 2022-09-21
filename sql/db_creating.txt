@@ -1,3 +1,4 @@
+
 CREATE DATABASE "ECOM_billing"
     WITH
     OWNER = postgres
@@ -7,67 +8,80 @@ CREATE DATABASE "ECOM_billing"
     TABLESPACE = pg_default
     CONNECTION LIMIT = -1;
 
-
-CREATE TABLE IF NOT EXISTS balance
+CREATE TABLE IF NOT EXISTS public.billing_table
 (
-    id_client integer NOT NULL,
-    current_balance numeric(12,2) NOT NULL,
-    last_changing timestamp without time zone NOT NULL,
-    status character varying(20),
-    CONSTRAINT clients_key FOREIGN KEY (id_client)
-        REFERENCES public.clients (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-);
-
-
-CREATE TABLE IF NOT EXISTS clients
-(
-    id integer NOT NULL,
-    CONSTRAINT clients_pkey PRIMARY KEY (id)
-);
-
-
-CREATE TABLE IF NOT EXISTS relation_client_service
-(
-    id integer NOT NULL,
-    id_client integer NOT NULL,
-    id_service integer NOT NULL,
-    status character varying(40) NOT NULL,
-    CONSTRAINT relation_client_service_pkey PRIMARY KEY (id),
-    CONSTRAINT clients_key FOREIGN KEY (id_client)
-        REFERENCES clients (id) MATCH SIMPLE
+    id_billing integer NOT NULL DEFAULT nextval('billing_table_id_billing_seq'::regclass),
+    id_transaction integer NOT NULL,
+    id_client character varying COLLATE pg_catalog."default" NOT NULL,
+    id_service character varying COLLATE pg_catalog."default" NOT NULL,
+    price numeric NOT NULL,
+    date_billing date NOT NULL,
+    status character varying COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT billing_table_pkey PRIMARY KEY (id_billing),
+    CONSTRAINT key_client FOREIGN KEY (id_client)
+        REFERENCES public.clients_table (id_client) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         NOT VALID,
-    CONSTRAINT services_key FOREIGN KEY (id_service)
-        REFERENCES services (id) MATCH SIMPLE
+    CONSTRAINT key_service FOREIGN KEY (id_service)
+        REFERENCES public.services_table (id_service) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+        NOT VALID,
+    CONSTRAINT key_transaction FOREIGN KEY (id_transaction)
+        REFERENCES public.tarifficator_table (id_transaction) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         NOT VALID
 );
 
-
-CREATE TABLE IF NOT EXISTS services
+CREATE TABLE IF NOT EXISTS public.clients_table
 (
-    id integer NOT NULL DEFAULT nextval('services_id_seq'::regclass),
-    description character varying COLLATE pg_catalog."default" NOT NULL,
-    type character varying(20) COLLATE pg_catalog."default" NOT NULL,
-    status character varying(20) COLLATE pg_catalog."default" NOT NULL,
-    price integer NOT NULL,
-    CONSTRAINT services_pkey PRIMARY KEY (id)
+    id_client character varying COLLATE pg_catalog."default" NOT NULL,
+    balance numeric NOT NULL,
+    date_change date NOT NULL,
+    status character varying COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT balances_table_pkey PRIMARY KEY (id_client)
 );
 
-CREATE TABLE IF NOT EXISTS tarificator
+CREATE TABLE IF NOT EXISTS public.relation_client_service_table
 (
-    id integer NOT NULL DEFAULT nextval('tarificator_id_seq'::regclass),
     id_relation integer NOT NULL,
-    action_type character varying COLLATE pg_catalog."default" NOT NULL,
-    parameter integer,
-    date timestamp without time zone NOT NULL,
-    withdrawn character varying COLLATE pg_catalog."default" NOT NULL,
-    CONSTRAINT relation_constr FOREIGN KEY (id_relation)
-        REFERENCES relation_client_service (id) MATCH SIMPLE
+    id_client character varying COLLATE pg_catalog."default" NOT NULL,
+    id_service character varying COLLATE pg_catalog."default" NOT NULL,
+    status character varying COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT relation_client_service_table_pkey PRIMARY KEY (id_relation),
+    CONSTRAINT key_client FOREIGN KEY (id_client)
+        REFERENCES public.clients_table (id_client) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION,
+    CONSTRAINT key_service FOREIGN KEY (id_service)
+        REFERENCES public.services_table (id_service) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+);
+
+CREATE TABLE IF NOT EXISTS public.services_table
+(
+    id_service character varying COLLATE pg_catalog."default" NOT NULL,
+    description character varying COLLATE pg_catalog."default" NOT NULL,
+    type character varying COLLATE pg_catalog."default" NOT NULL,
+    status character varying COLLATE pg_catalog."default" NOT NULL,
+    price numeric NOT NULL,
+    CONSTRAINT services_table_pkey PRIMARY KEY (id_service)
+);
+
+CREATE TABLE IF NOT EXISTS public.tarifficator_table
+(
+    id_transaction integer NOT NULL DEFAULT nextval('tarifficator_table_id_transaction_seq'::regclass),
+    id_relation integer NOT NULL,
+    type character varying COLLATE pg_catalog."default" NOT NULL,
+    parameter integer NOT NULL,
+    date_transaction date NOT NULL,
+    status character varying COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT tarifficator_table_pkey PRIMARY KEY (id_transaction),
+    CONSTRAINT key_relation FOREIGN KEY (id_relation)
+        REFERENCES public.relation_client_service_table (id_relation) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
 );
